@@ -22,7 +22,7 @@ def load_data():
     data_prep.load_data()
     
     # Convert numeric columns
-    numeric_cols = ['Dur. (ms)', 'DL (Bytes)', 'UL (Bytes)']
+    numeric_cols = ['Dur. (ms)', 'HTTP DL (Bytes)', 'HTTP UL (Bytes)']
     for col in numeric_cols:
         data_prep.xdr_data[col] = pd.to_numeric(
             data_prep.xdr_data[col].replace('\\N', '0'), 

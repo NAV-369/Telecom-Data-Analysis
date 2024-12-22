@@ -19,22 +19,25 @@ class UserEngagementAnalyzer:
     def aggregate_engagement_metrics(self) -> pd.DataFrame:
         """Aggregate engagement metrics per customer."""
         # First, let's convert the numeric columns, handling the '\\N' values
-        numeric_cols = ['Dur. (ms)', 'DL (Bytes)', 'UL (Bytes)']
+        numeric_cols = ['Dur. (ms)', 'HTTP DL (Bytes)', 'HTTP UL (Bytes)']
         df = self.xdr_data.copy()
         
         for col in numeric_cols:
             df[col] = pd.to_numeric(df[col].replace('\\N', '0'), errors='coerce')
         
         # Aggregate metrics per customer
-        metrics = df.groupby('MSISDN').agg({
+        metrics = df.groupby('MSISDN/Number').agg({
             'Bearer Id': 'count',  # session frequency
             'Dur. (ms)': 'sum',    # total duration
-            'DL (Bytes)': 'sum',   # total download
-            'UL (Bytes)': 'sum'    # total upload
+            'HTTP DL (Bytes)': 'sum',   # total download
+            'HTTP UL (Bytes)': 'sum'    # total upload
         }).reset_index()
         
+        # Rename the column to 'MSISDN'
+        metrics = metrics.rename(columns={'MSISDN/Number': 'MSISDN'})
+        
         # Calculate total traffic
-        metrics['Total Traffic (Bytes)'] = metrics['DL (Bytes)'] + metrics['UL (Bytes)']
+        metrics['Total Traffic (Bytes)'] = metrics['HTTP DL (Bytes)'] + metrics['HTTP UL (Bytes)']
         
         # Rename columns for clarity
         metrics.columns = ['MSISDN', 'Session_Frequency', 'Duration_ms', 
@@ -123,9 +126,12 @@ class UserEngagementAnalyzer:
         # Aggregate traffic per user and application
         app_engagement = pd.DataFrame()
         for app in app_columns:
-            user_app_traffic = self.xdr_data.groupby('MSISDN').agg({
+            user_app_traffic = self.xdr_data.groupby('MSISDN/Number').agg({
                 app: lambda x: pd.to_numeric(x.replace('\\N', '0'), errors='coerce').sum()
             }).reset_index()
+            
+            # Rename the column to 'MSISDN'
+            user_app_traffic = user_app_traffic.rename(columns={'MSISDN/Number': 'MSISDN'})
             
             # Get top 10 users for this app
             top_users = user_app_traffic.nlargest(10, app)

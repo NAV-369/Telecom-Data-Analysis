@@ -17,8 +17,18 @@ st.set_page_config(
 # Initialize data preparation
 @st.cache_data
 def load_data():
+    """Load and prepare data."""
     data_prep = DataPreparation()
     data_prep.load_data()
+    
+    # Convert numeric columns
+    numeric_cols = ['Dur. (ms)', 'DL (Bytes)', 'UL (Bytes)']
+    for col in numeric_cols:
+        data_prep.xdr_data[col] = pd.to_numeric(
+            data_prep.xdr_data[col].replace('\\N', '0'), 
+            errors='coerce'
+        )
+    
     return data_prep
 
 # Main function

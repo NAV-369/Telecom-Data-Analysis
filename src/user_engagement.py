@@ -18,15 +18,23 @@ class UserEngagementAnalyzer:
         
     def aggregate_engagement_metrics(self) -> pd.DataFrame:
         """Aggregate engagement metrics per customer."""
-        metrics = self.xdr_data.groupby('MSISDN/Number').agg({
-            'Session ID': 'count',  # session frequency
+        # First, let's convert the numeric columns, handling the '\\N' values
+        numeric_cols = ['Dur. (ms)', 'DL (Bytes)', 'UL (Bytes)']
+        df = self.xdr_data.copy()
+        
+        for col in numeric_cols:
+            df[col] = pd.to_numeric(df[col].replace('\\N', '0'), errors='coerce')
+        
+        # Aggregate metrics per customer
+        metrics = df.groupby('MSISDN').agg({
+            'Bearer Id': 'count',  # session frequency
             'Dur. (ms)': 'sum',    # total duration
-            'Total DL (Bytes)': lambda x: pd.to_numeric(x.replace('\\N', '0'), errors='coerce').sum(),
-            'Total UL (Bytes)': lambda x: pd.to_numeric(x.replace('\\N', '0'), errors='coerce').sum()
+            'DL (Bytes)': 'sum',   # total download
+            'UL (Bytes)': 'sum'    # total upload
         }).reset_index()
         
         # Calculate total traffic
-        metrics['Total Traffic (Bytes)'] = metrics['Total DL (Bytes)'] + metrics['Total UL (Bytes)']
+        metrics['Total Traffic (Bytes)'] = metrics['DL (Bytes)'] + metrics['UL (Bytes)']
         
         # Rename columns for clarity
         metrics.columns = ['MSISDN', 'Session_Frequency', 'Duration_ms', 
@@ -115,13 +123,13 @@ class UserEngagementAnalyzer:
         # Aggregate traffic per user and application
         app_engagement = pd.DataFrame()
         for app in app_columns:
-            user_app_traffic = self.xdr_data.groupby('MSISDN/Number').agg({
+            user_app_traffic = self.xdr_data.groupby('MSISDN').agg({
                 app: lambda x: pd.to_numeric(x.replace('\\N', '0'), errors='coerce').sum()
             }).reset_index()
             
             # Get top 10 users for this app
             top_users = user_app_traffic.nlargest(10, app)
-            app_engagement[f'{app}_Top_Users'] = top_users['MSISDN/Number']
+            app_engagement[f'{app}_Top_Users'] = top_users['MSISDN']
             app_engagement[f'{app}_Traffic'] = top_users[app]
         
         return app_engagement

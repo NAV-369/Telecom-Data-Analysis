@@ -6,6 +6,7 @@ from data_preparation import DataPreparation
 import plotly.express as px
 import plotly.graph_objects as go
 from user_engagement import UserEngagementAnalyzer
+from experience_analytics import ExperienceAnalytics
 
 # Set page config
 st.set_page_config(
@@ -42,11 +43,14 @@ def main():
     # Initialize user engagement analyzer
     engagement_analyzer = UserEngagementAnalyzer(data_prep.xdr_data)
     
+    # Initialize experience analytics
+    experience_analyzer = ExperienceAnalytics(data_prep.xdr_data)
+    
     # Sidebar
     st.sidebar.title("Navigation")
     page = st.sidebar.radio(
         "Select a page",
-        ["Overview", "User Engagement", "Handset Analysis", "User Behavior", "Advanced Analytics"]
+        ["Overview", "User Engagement", "Handset Analysis", "User Behavior", "Advanced Analytics", "Experience Analytics"]
     )
     
     if page == "Overview":
@@ -425,7 +429,7 @@ def main():
         # Display segment statistics
         st.dataframe(segment_stats, use_container_width=True)
         
-    else:  # Advanced Analytics
+    elif page == "Advanced Analytics":
         st.header("Advanced Analytics")
         
         # Correlation analysis
@@ -455,6 +459,98 @@ def main():
             title=f"PCA Results (Explained Variance: PC1={explained_variance[0]:.2%}, PC2={explained_variance[1]:.2%})"
         )
         st.plotly_chart(fig, use_container_width=True)
+
+    elif page == "Experience Analytics":
+        st.header("📊 Experience Analytics in Telecommunication")
+        
+        st.markdown("""
+        ## User Experience Analysis in Telecommunication Industry
+
+        ### Task Overview
+        In the rapidly evolving telecommunication industry, understanding user experience is crucial. 
+        This analysis focuses on network performance metrics and device characteristics to provide 
+        insights into user interactions and service quality.
+
+        ### Key Objectives
+        1. **Customer Metrics Aggregation**
+           - Analyze network parameters per customer
+           - Handle missing values and outliers
+           - Compute average metrics
+
+        2. **Network Performance Analysis**
+           - Identify top, bottom, and most frequent values for:
+             * TCP Retransmission
+             * Round Trip Time (RTT)
+             * Network Throughput
+
+        3. **Handset Type Performance**
+           - Analyze performance variations across different handset types
+           - Understand how device characteristics impact network experience
+
+        4. **User Experience Segmentation**
+           - Apply K-means clustering to segment users
+           - Identify distinct user experience groups
+        """)
+        
+        # Initialize Experience Analytics
+        experience_analyzer = ExperienceAnalytics(data_prep.xdr_data)
+        
+        # Task 3.1: Customer Metrics Aggregation
+        st.subheader("1. Customer Metrics Aggregation")
+        customer_metrics = experience_analyzer.task_3_1_aggregate_customer_metrics()
+        st.dataframe(customer_metrics.head(10))
+        
+        # Task 3.2: Network Metrics Analysis
+        st.subheader("2. Network Metrics Analysis")
+        network_metrics = experience_analyzer.task_3_2_network_metrics_analysis()
+        
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.write("TCP Metrics")
+            st.write("Top 10:", network_metrics['TCP_Metrics']['Top_10'][:3])
+            st.write("Bottom 10:", network_metrics['TCP_Metrics']['Bottom_10'][:3])
+        
+        with col2:
+            st.write("RTT Metrics")
+            st.write("Top 10:", network_metrics['RTT_Metrics']['Top_10'][:3])
+            st.write("Bottom 10:", network_metrics['RTT_Metrics']['Bottom_10'][:3])
+        
+        with col3:
+            st.write("Throughput Metrics")
+            st.write("Top 10:", network_metrics['Throughput_Metrics']['Top_10'][:3])
+            st.write("Bottom 10:", network_metrics['Throughput_Metrics']['Bottom_10'][:3])
+        
+        # Task 3.3: Handset Performance Analysis
+        st.subheader("3. Handset Performance Analysis")
+        handset_metrics = experience_analyzer.task_3_3_handset_performance_analysis()
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.write("Throughput by Handset Type")
+            st.dataframe(handset_metrics['Throughput_By_Handset'])
+            st.write(handset_metrics['Throughput_Interpretation'])
+        
+        with col2:
+            st.write("TCP Retransmission by Handset Type")
+            st.dataframe(handset_metrics['TCP_By_Handset'])
+            st.write(handset_metrics['TCP_Interpretation'])
+        
+        # Task 3.4: User Experience Clustering
+        st.subheader("4. User Experience Segmentation")
+        clustering_results = experience_analyzer.task_3_4_user_experience_clustering()
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.write("Cluster Summary")
+            st.dataframe(clustering_results['Cluster_Summary'])
+        
+        with col2:
+            st.write("Cluster Descriptions")
+            for cluster, description in clustering_results['Cluster_Descriptions'].items():
+                st.write(description)
 
 if __name__ == "__main__":
     main()

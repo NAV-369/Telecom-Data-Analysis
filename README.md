@@ -3,33 +3,20 @@
 ## Project Overview
 This project focuses on analyzing user engagement metrics in telecom data using advanced data processing and visualization techniques.
 
-## Task 1: Data Preparation
-- Developed scripts to clean and preprocess raw telecom data.
-- Handled missing values and outliers.
-- Ensured data is in a suitable format for analysis.
+## Task 1: User Overview Analysis
+Objective: Conduct an exploratory data analysis to understand user behavior and identify key metrics related to handset usage and application engagement.
 
 ## Task 2: User Engagement Analysis
-- Calculated key user engagement metrics.
-- Implemented an interactive Streamlit dashboard for visualization.
-- Key Features:
-  - Session frequency analysis
-  - Traffic volume tracking
-  - User clustering
-  - Top user identification
+Objective: Analyze user engagement metrics to assess customer interaction with applications and identify areas for improvement.
 
-## Task 3: Satisfaction Analysis
-- Analyzed user satisfaction metrics based on engagement data.
-- Generated insights into user behavior and satisfaction levels.
-- Visualized satisfaction metrics using graphs and charts.
+## Task 3: Experience Analytics
+Objective: Evaluate user experience based on network performance and device characteristics to optimize services and meet customer expectations.
 
-## Task 4: Experience Metrics Calculation
-- Developed scripts to calculate experience metrics for users.
-- Integrated these metrics into the existing dashboard.
-- Enhanced the dashboard with additional visualizations for experience metrics.
+## Task 4: Satisfaction Analysis
+Objective: Assess customer satisfaction by linking engagement and experience metrics, and develop predictive models for satisfaction scores.
 
 ## Setup and Installation
-
-### Prerequisites
+This project requires the following libraries:
 - Python 3.8+
 - Pandas
 - Streamlit
@@ -49,14 +36,12 @@ streamlit run src/dashboard.py
   - `experience_metrics.py`: Experience metrics calculation logic
 
 ## Detailed Report
-For a comprehensive analysis, please refer to `report/Task2_Report.md`
+For a comprehensive analysis, please refer to `report/Task2_Report.md`.
 
 ## Contributing
-
-1. Create a new branch for your feature
-2. Make your changes
-3. Submit a pull request
+1. Create a new branch for your feature.
+2. Make your changes.
+3. Submit a pull request.
 
 ## License
-
 [MIT License](LICENSE)

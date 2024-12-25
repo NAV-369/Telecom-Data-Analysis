@@ -1,3 +1,7 @@
+import os
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 import pandas as pd
 import numpy as np
 from sklearn.pipeline import Pipeline
@@ -6,6 +10,7 @@ from sklearn.decomposition import PCA
 from typing import Dict, List, Tuple
 import logging
 from pathlib import Path
+import os
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -23,7 +28,8 @@ class DataPreparation:
         """Load data from parquet file."""
         try:
             # Load data from parquet file
-            xdr_file = self.data_dir / 'xdr_data.parquet'
+            xdr_file = os.path.abspath(self.data_dir / 'xdr_data.parquet')
+            logger.info(f"Attempting to load data from: {xdr_file}")
             self.xdr_data = pd.read_parquet(xdr_file)
             logger.info("Data loaded successfully")
             

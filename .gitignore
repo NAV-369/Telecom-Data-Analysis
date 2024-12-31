@@ -49,18 +49,26 @@ nosetests.xml
 coverage.xml
 *.cover
 *.py,cover
-.hypothesis/
-.pytest_cache/
+
+# Large data files
+data/*.sql
+data/*.parquet
+data/*.csv
+data/*.xlsx
+data/*.db
+
+# Local development settings
+.env
+.env.local
+.env.*.local
 
 # Logs
 *.log
+logs/
 
 # Database
 *.db
 *.sqlite3
-
-# Environment variables
-.env
 
 # OS generated files
 .DS_Store

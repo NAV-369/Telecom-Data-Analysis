@@ -5,6 +5,7 @@ import seaborn as sns
 from data_preparation import DataPreparation
 import plotly.express as px
 import plotly.graph_objects as go
+from user_engagement import UserEngagementAnalyzer
 
 # Set page config
 st.set_page_config(
@@ -16,8 +17,18 @@ st.set_page_config(
 # Initialize data preparation
 @st.cache_data
 def load_data():
+    """Load and prepare data."""
     data_prep = DataPreparation()
     data_prep.load_data()
+    
+    # Convert numeric columns
+    numeric_cols = ['Dur. (ms)', 'HTTP DL (Bytes)', 'HTTP UL (Bytes)']
+    for col in numeric_cols:
+        data_prep.xdr_data[col] = pd.to_numeric(
+            data_prep.xdr_data[col].replace('\\N', '0'), 
+            errors='coerce'
+        )
+    
     return data_prep
 
 # Main function
@@ -28,11 +39,14 @@ def main():
     with st.spinner("Loading data..."):
         data_prep = load_data()
     
+    # Initialize user engagement analyzer
+    engagement_analyzer = UserEngagementAnalyzer(data_prep.xdr_data)
+    
     # Sidebar
     st.sidebar.title("Navigation")
     page = st.sidebar.radio(
         "Select a page",
-        ["Overview", "Handset Analysis", "User Behavior", "Advanced Analytics"]
+        ["Overview", "User Engagement", "Handset Analysis", "User Behavior", "Advanced Analytics"]
     )
     
     if page == "Overview":
@@ -170,6 +184,128 @@ def main():
         col1.metric("Avg Daily Download", f"{avg_daily_dl:.2f} GB")
         col2.metric("Avg Daily Upload", f"{avg_daily_ul:.2f} GB")
         col3.metric("Peak Usage Date", peak_usage_day.strftime('%Y-%m-%d'))
+        
+    elif page == "User Engagement":
+        st.header("User Engagement Analysis")
+        
+        # Get engagement metrics
+        metrics = engagement_analyzer.aggregate_engagement_metrics()
+        
+        # Top users section
+        st.subheader("Top Users Analysis")
+        metric_choice = st.selectbox(
+            "Select Metric",
+            ["Session_Frequency", "Duration_ms", "Total_Traffic"],
+            format_func=lambda x: {
+                "Session_Frequency": "Number of Sessions",
+                "Duration_ms": "Session Duration",
+                "Total_Traffic": "Total Data Traffic"
+            }[x]
+        )
+        
+        top_users = engagement_analyzer.get_top_users(metric_choice)
+        
+        # Create bar chart for top users
+        fig = px.bar(
+            top_users,
+            x='MSISDN',
+            y=metric_choice,
+            title=f'Top 10 Users by {metric_choice}',
+            labels={
+                'MSISDN': 'User ID',
+                metric_choice: metric_choice.replace('_', ' ')
+            }
+        )
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # Clustering Analysis
+        st.subheader("User Clustering Analysis")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Elbow method plot
+            k_values, inertias, silhouette_scores = engagement_analyzer.find_optimal_k()
+            
+            fig_elbow = go.Figure()
+            fig_elbow.add_trace(go.Scatter(
+                x=k_values,
+                y=inertias,
+                mode='lines+markers',
+                name='Inertia'
+            ))
+            fig_elbow.update_layout(
+                title='Elbow Method for Optimal k',
+                xaxis_title='Number of Clusters (k)',
+                yaxis_title='Inertia'
+            )
+            st.plotly_chart(fig_elbow, use_container_width=True)
+        
+        with col2:
+            # Silhouette score plot
+            fig_silhouette = go.Figure()
+            fig_silhouette.add_trace(go.Scatter(
+                x=k_values,
+                y=silhouette_scores,
+                mode='lines+markers',
+                name='Silhouette Score'
+            ))
+            fig_silhouette.update_layout(
+                title='Silhouette Analysis',
+                xaxis_title='Number of Clusters (k)',
+                yaxis_title='Silhouette Score'
+            )
+            st.plotly_chart(fig_silhouette, use_container_width=True)
+        
+        # K-means clustering
+        k = st.slider("Select number of clusters", min_value=2, max_value=10, value=3)
+        clustered_data, cluster_stats = engagement_analyzer.perform_kmeans(k=k)
+        
+        # 3D scatter plot of clusters
+        fig_3d = px.scatter_3d(
+            clustered_data,
+            x='Session_Frequency',
+            y='Duration_ms',
+            z='Total_Traffic',
+            color='Cluster',
+            title='User Clusters in 3D Space',
+            labels={
+                'Session_Frequency': 'Number of Sessions',
+                'Duration_ms': 'Session Duration (ms)',
+                'Total_Traffic': 'Total Data Traffic (bytes)'
+            }
+        )
+        st.plotly_chart(fig_3d, use_container_width=True)
+        
+        # Cluster Statistics
+        st.subheader("Cluster Statistics")
+        
+        # Create metrics for each cluster
+        cols = st.columns(k)
+        for i, (cluster, stats) in enumerate(cluster_stats.items()):
+            with cols[i]:
+                st.metric(f"Cluster {i}", f"{stats['size']} users")
+                st.write(f"Average Metrics:")
+                st.write(f"- Sessions: {stats['mean']['Session_Frequency']:.2f}")
+                st.write(f"- Duration: {stats['mean']['Duration_ms']/1000:.2f} s")
+                st.write(f"- Traffic: {stats['mean']['Total_Traffic']/1024**2:.2f} MB")
+        
+        # Application Usage Analysis
+        st.subheader("Application Usage Analysis")
+        
+        # Plot top 3 applications
+        engagement_analyzer.plot_top_apps()
+        
+        # Application engagement table
+        app_engagement = engagement_analyzer.analyze_app_engagement()
+        
+        # Convert bytes to MB for better readability
+        for col in app_engagement.columns:
+            if 'Traffic' in col:
+                app_engagement[col] = app_engagement[col] / (1024**2)
+                
+        st.write("Top Users per Application (Traffic in MB)")
+        st.dataframe(app_engagement)
         
     elif page == "Handset Analysis":
         st.header("Handset Analysis")
